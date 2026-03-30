@@ -11,7 +11,7 @@ class Program
 {
     static void Main(string[] args)
     {
-        Console.WriteLine("🔥 RESTORE PRO RL + FACE SAFE");
+        Console.WriteLine("🔥 RESTORE PRO v2 (COLOR + SAFE RL + DETAIL)");
 
         string input = args.Length > 0 ? args[0] : "foto.jpg";
 
@@ -27,95 +27,57 @@ class Program
         Directory.CreateDirectory(rootFolder);
 
         // =========================
-        // 🔁 70+ COMBINACIONES PRO (CATEGORIZADAS)
+        // 🎨 0. COLOR FIX (ANTI AMARILLO)
+        // =========================
+        using (Mat balanced = new Mat())
+        {
+            CvInvoke.CvtColor(original, balanced, ColorConversion.Bgr2Lab);
+
+            using (VectorOfMat ch = new VectorOfMat())
+            {
+                CvInvoke.Split(balanced, ch);
+
+                // Ajustes suaves (puedes variar -3 a -10)
+                CvInvoke.Add(ch[1], new ScalarArray(-5), ch[1]);
+                CvInvoke.Add(ch[2], new ScalarArray(-5), ch[2]);
+
+                CvInvoke.Merge(ch, balanced);
+            }
+
+            CvInvoke.CvtColor(balanced, original, ColorConversion.Lab2Bgr);
+        }
+
+        // =========================
+        // 🌗 1. CONTRASTE GLOBAL
+        // =========================
+        using (Mat labGlobal = new Mat())
+        {
+            CvInvoke.CvtColor(original, labGlobal, ColorConversion.Bgr2Lab);
+
+            using (VectorOfMat ch = new VectorOfMat())
+            {
+                CvInvoke.Split(labGlobal, ch);
+
+                CvInvoke.CLAHE(ch[0], 2.5, new Size(8, 8), ch[0]);
+
+                CvInvoke.Merge(ch, labGlobal);
+            }
+
+            CvInvoke.CvtColor(labGlobal, original, ColorConversion.Lab2Bgr);
+        }
+
+        // =========================
+        // 🔁 CONFIGURACIONES SEGURAS (CATEGORIZADAS)
         // =========================
         var configs = new List<(string cat, int h, int iter, int k, double sigma, double sharp, double clip)>
         {
-            // // 🔻 01_MUY_SUAVE (micro ajustes)
-            // ("01_MUY_SUAVE", 1, 3, 3, 0.3, 0.1, 0.8),
-            // ("01_MUY_SUAVE", 1, 5, 3, 0.5, 0.2, 1.0),
-            // ("01_MUY_SUAVE", 3, 3, 3, 0.4, 0.15, 1.0),
-            // ("01_MUY_SUAVE", 3, 5, 3, 0.6, 0.25, 1.2),
-            // ("01_MUY_SUAVE", 3, 8, 3, 0.7, 0.3, 1.5),
-
-            // // 🔸 02_SUAVE_MEDIO
-            // ("02_SUAVE_MEDIO", 3,10, 5, 1.0, 0.4, 2.0),
-            // ("02_SUAVE_MEDIO", 3,12, 5, 1.2, 0.5, 2.2),
-            // ("02_SUAVE_MEDIO", 5, 6, 3, 1.0, 0.3, 1.8),
-            // ("02_SUAVE_MEDIO", 5, 8, 5, 1.2, 0.5, 2.2),
-            // ("02_SUAVE_MEDIO", 5,10, 5, 1.5, 0.7, 2.5),
-            // ("02_SUAVE_MEDIO", 5,12, 5, 1.8, 0.8, 2.8),
-            // ("02_SUAVE_MEDIO", 5,15, 7, 2.0, 1.0, 3.2),
-            // ("02_SUAVE_MEDIO", 3,18, 5, 1.0, 0.6, 2.0),
-
-            // // 🔥 03_MEDIO
-            // ("03_MEDIO", 7, 6, 3, 0.8, 0.4, 1.5),
-            // ("03_MEDIO", 7, 8, 3, 1.0, 0.5, 2.0),
-            // ("03_MEDIO", 7,10, 5, 1.5, 0.8, 2.5),
-            // ("03_MEDIO", 7,12, 5, 1.8, 1.0, 3.0),
-            // ("03_MEDIO", 7,15, 7, 2.2, 1.2, 3.8),
-            // ("03_MEDIO", 7,18, 7, 2.5, 1.3, 4.5),
-            // ("03_MEDIO", 7,20, 7, 3.0, 1.5, 5.0),
-
-            // // 🔥🔥 04_FUERTE (restauración profunda)
-            // ("04_FUERTE", 9,10, 5, 2.0, 1.0, 3.0),
-            // ("04_FUERTE", 9,12, 7, 2.5, 1.2, 4.0),
-            // ("04_FUERTE", 9,15, 7, 3.0, 1.5, 5.0),
-            // ("04_FUERTE", 9,18, 9, 3.5, 1.7, 6.0),
-            // ("04_FUERTE", 9,20, 9, 4.0, 2.0, 7.0),
-            // ("04_FUERTE", 11,10, 5, 1.5, 0.8, 2.5),
-            // ("04_FUERTE", 11,12, 7, 2.0, 1.0, 3.5),
-
-            // // ⚡ 05_POTENTE (elimina grano pesado)
-            // ("05_POTENTE", 13,10, 5, 1.5, 0.7, 2.0),
-            // ("05_POTENTE", 13,12, 7, 2.0, 0.9, 3.0),
-            // ("05_POTENTE", 13,15, 7, 2.5, 1.2, 4.0),
-            // ("05_POTENTE", 13,18, 9, 3.0, 1.5, 5.0),
-            // ("05_POTENTE", 13,20, 9, 3.5, 1.8, 6.0),
-
-            // // 💀 06_AGRESIVO
-            // ("06_AGRESIVO", 15,15, 7, 3.0, 1.5, 5.0),
-            // ("06_AGRESIVO", 15,20, 9, 4.0, 2.0, 7.0),
-            // ("06_AGRESIVO", 15,25, 9, 5.0, 2.5, 8.0),
-            // ("06_AGRESIVO", 17,20, 9, 4.5, 2.2, 7.5),
-            // ("06_AGRESIVO", 17,25,11, 6.0, 3.0,10.0),
-
-            // // 💀💀 07_EXTREMO
-            // ("07_EXTREMO", 19,25,11, 7.0, 3.5,12.0),
-            // ("07_EXTREMO", 19,30,11, 8.0, 4.0,15.0),
-            // ("07_EXTREMO", 21,30,13, 9.0, 5.0,20.0),
-            // ("07_EXTREMO", 23,30,15,10.0, 6.0,25.0),
-            // ("07_EXTREMO", 25,35,17,12.0, 7.5,30.0),
-
-            // 🔀 08_RANDOM (mezcla realista + caótica)
-            ("08_RANDOM", 3,25, 3, 0.5, 2.0, 5.0),
-            ("08_RANDOM", 5,30, 5, 1.0, 2.5, 6.0),
-            ("08_RANDOM", 7,35, 7, 1.5, 3.0, 7.0),
-            ("08_RANDOM", 9,40, 9, 2.0, 3.5, 8.0),
-            ("08_RANDOM", 11,45,11,2.5, 4.0, 9.0),
-            ("08_RANDOM", 5,15,15, 4.0, 3.0, 8.0),
-            ("08_RANDOM", 7,20,17, 5.0, 3.5,10.0),
-            ("08_RANDOM", 9,25,19, 6.0, 4.0,12.0),
-            ("08_RANDOM", 11,30,21,7.0, 4.5,14.0),
-            ("08_RANDOM", 13,35,23,8.0, 5.0,16.0),
-
-            // 🔥🔥🔥 09_CAOS_CONTROLADO
-            ("09_CAOS_CONTROLADO", 3,50, 3, 0.3, 3.0,10.0),
-            ("09_CAOS_CONTROLADO", 5,50, 5, 0.8, 3.5,12.0),
-            ("09_CAOS_CONTROLADO", 7,50, 7, 1.2, 4.0,14.0),
-            ("09_CAOS_CONTROLADO", 9,50, 9, 2.0, 4.5,16.0),
-            ("09_CAOS_CONTROLADO", 11,50,11,3.0, 5.0,18.0),
-
-            // 🔻 10_EXTRA_BAJOS (no pierden detalle fino)
-            ("10_EXTRA_BAJOS", 1,10, 3, 0.2, 0.05, 0.5),
-            ("10_EXTRA_BAJOS", 1,15, 3, 0.3, 0.1, 0.7),
-            ("10_EXTRA_BAJOS", 3,20, 3, 0.5, 0.2, 1.0),
-            ("10_EXTRA_BAJOS", 3,25, 3, 0.7, 0.3, 1.5),
-            ("10_EXTRA_BAJOS", 5,30, 3, 1.0, 0.4, 2.0)
+            ("01_SUAVE", 3, 6, 3, 1.0, 0.4, 2.0),
+            ("01_SUAVE", 5, 8, 3, 1.2, 0.6, 2.5),
+            ("02_MEDIO", 5, 10, 5, 1.5, 0.8, 3.0),
+            ("02_MEDIO", 7, 8, 3, 1.0, 0.5, 2.0),
+            ("02_MEDIO", 7, 10, 5, 1.5, 0.7, 2.5)
         };
 
-
-        int comboCount = configs.Count * 2; // (Original + 1 variante) -> No, triplica: (Original + 2 variantes)
         int totalCombos = configs.Count * 3;
         int currentIdx = 1;
         Random rnd = new Random();
@@ -125,11 +87,9 @@ class Program
             for (int v = 0; v < 3; v++)
             {
                 using Mat img = original.Clone();
-                
-                // Variaciones aleatorias para "triplicar" las posibilidades
-                // v=0 (Original), v=1 (Variante A), v=2 (Variante B)
-                double rv = v == 0 ? 0 : (rnd.NextDouble() * 0.4 + 0.8); // Mutaciones de 0.8x a 1.2x aproximadamente
-                
+
+                // Variaciones aleatorias (Original + 2 variantes)
+                double rv = v == 0 ? 0 : (rnd.NextDouble() * 0.4 + 0.8);
                 int h = v == 0 ? cfg.h : Math.Max(1, (int)(cfg.h * rv));
                 int it = v == 0 ? cfg.iter : Math.Max(3, (int)(cfg.iter * (rnd.NextDouble() * 0.5 + 0.75)));
                 double sh = v == 0 ? cfg.sharp : (cfg.sharp * (rnd.NextDouble() * 0.6 + 0.7));
@@ -140,13 +100,13 @@ class Program
                 Directory.CreateDirectory(catDir);
 
                 // =========================
-                // 1. DENOISE
+                // 2. DENOISE
                 // =========================
                 using Mat denoise = new Mat();
                 CvInvoke.FastNlMeansDenoisingColored(img, denoise, h, h, 7, 21);
 
                 // =========================
-                // 2. LAB (SEPARAR LUZ)
+                // 3. LAB
                 // =========================
                 using Mat lab = new Mat();
                 CvInvoke.CvtColor(denoise, lab, ColorConversion.Bgr2Lab);
@@ -159,21 +119,36 @@ class Program
                 Mat b = ch[2];
 
                 // =========================
-                // 💀 3. RL SOLO EN L
+                // 💀 RL SEGURO
                 // =========================
-                using Mat l_rl = RichardsonLucy(l, it, cfg.k, cfg.sigma);
+                int safeIter = Math.Min(it, 12);
+                double safeSigma = Math.Min(cfg.sigma, 2.5);
+
+                using Mat l_rl = RichardsonLucy(l, safeIter, cfg.k, safeSigma);
 
                 // =========================
-                // 🔍 4. SHARPEN CONTROLADO
+                // 🔍 SHARP CONTROLADO
                 // =========================
                 using Mat blur = new Mat();
                 CvInvoke.GaussianBlur(l_rl, blur, new Size(0, 0), 1.2);
 
                 using Mat sharp = new Mat();
-                CvInvoke.AddWeighted(l_rl, 1 + sh, blur, -sh, 0, sharp);
+                double safeSharp = Math.Min(sh, 1.5);
+                CvInvoke.AddWeighted(l_rl, 1 + safeSharp, blur, -safeSharp, 0, sharp);
 
                 // =========================
-                // 🌗 5. CLAHE
+                // 🧬 MICRO DETALLE (LAPLACIANO)
+                // =========================
+                using Mat detail = new Mat();
+                CvInvoke.Laplacian(sharp, detail, DepthType.Cv16S, 3);
+
+                using Mat absDetail = new Mat();
+                CvInvoke.ConvertScaleAbs(detail, absDetail, 1.0, 0.0);
+
+                CvInvoke.AddWeighted(sharp, 1.0, absDetail, 0.3, 0, sharp);
+
+                // =========================
+                // 🌗 CLAHE FINAL
                 // =========================
                 CvInvoke.CLAHE(sharp, cl, new Size(8, 8), l);
 
@@ -189,29 +164,25 @@ class Program
                 CvInvoke.CvtColor(merged, final, ColorConversion.Lab2Bgr);
 
                 // =========================
-                // 🚀 6. HD
+                // 🚀 HD
                 // =========================
                 using Mat hd = new Mat();
                 CvInvoke.Resize(final, hd, new Size(final.Width * 2, final.Height * 2), 0, 0, Inter.Lanczos4);
 
-                string fileName = $"img_{currentIdx}_h{h}_it{it}_s{sh:F1}_c{cl:F1}_v{v}_HD.jpg";
+                string fileName = $"img_{currentIdx}_h{h}_it{it}_v{v}_HD.jpg";
                 string fullPath = Path.Combine(catDir, fileName);
 
                 CvInvoke.Imwrite(fullPath, hd);
                 Console.WriteLine($"[{currentIdx}/{totalCombos}] ✅ {cfg.cat} -> {fileName}");
-
+                
                 currentIdx++;
-                l_rl?.Dispose();
             }
         }
 
         // =========================
-        // 🧠 MODO ROSTRO SEGURO
+        // 🧠 FACE SAFE (ULTRA SUAVE)
         // =========================
-        Console.WriteLine("\n🧠 PROCESANDO ROSTRO SEGURO...");
-
-        string faceDir = Path.Combine(rootFolder, "06_ROSTROS");
-        Directory.CreateDirectory(faceDir);
+        Console.WriteLine("🧠 Procesando rostro seguro...");
 
         using (Mat denoise = new Mat())
         using (Mat lab = new Mat())
@@ -228,13 +199,12 @@ class Program
 
                 Mat l = ch[0];
 
-                // RL MÁS SUAVE (SEGURIDAD)
-                Mat l_rl = RichardsonLucy(l, 6, 5, 1.2);
+                Mat l_rl = RichardsonLucy(l, 4, 3, 0.8);
 
                 using Mat blur = new Mat();
                 CvInvoke.GaussianBlur(l_rl, blur, new Size(0, 0), 1.0);
 
-                CvInvoke.AddWeighted(l_rl, 1.2, blur, -0.2, 0, l);
+                CvInvoke.AddWeighted(l_rl, 1.1, blur, -0.1, 0, l);
 
                 CvInvoke.CLAHE(l, 2.0, new Size(8, 8), l);
 
@@ -245,13 +215,13 @@ class Program
 
             CvInvoke.Resize(final, hd, new Size(final.Width * 2, final.Height * 2), 0, 0, Inter.Lanczos4);
 
-            string path = Path.Combine(faceDir, "Face_Final_HD.jpg");
-            CvInvoke.Imwrite(path, hd);
+            string facePath = Path.Combine(rootFolder, "Face_SAFE.jpg");
+            CvInvoke.Imwrite(facePath, hd);
 
-            Console.WriteLine($"✅ ROSTRO FINAL: {path}");
+            Console.WriteLine($"✅ {facePath}");
         }
 
-        Console.WriteLine("\n🔥 DONE");
+        Console.WriteLine("🔥 DONE");
         Console.ReadKey();
     }
 
@@ -265,7 +235,7 @@ class Program
 
         Mat psf = CvInvoke.GetGaussianKernel(kernelSize, sigma, DepthType.Cv32F);
         Mat psf2D = new Mat();
-        CvInvoke.MulTransposed(psf, psf2D, false); 
+        CvInvoke.MulTransposed(psf, psf2D, false);
         CvInvoke.Normalize(psf2D, psf2D, 1.0, 0, NormType.L1);
 
         Mat psfFlip = new Mat();
